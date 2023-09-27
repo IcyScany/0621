@@ -17,12 +17,12 @@
 
  @font-face {
    font-family: 'Montserrat';
-   src: url('./assets/Montserrat-Regular-8.ttf');
+   src: url('./assets/font/Montserrat-Regular-8.ttf');
  }
 
  @font-face {
    font-family: 'Open Sans';
-   src: url('./assets/Open-Sans-2.ttf');
+   src: url('./assets/font/Open-Sans-2.ttf');
  }
 
  .font0 {

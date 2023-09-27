@@ -6,28 +6,10 @@
 
 <script setup>
 import StoryList from '../../components/StoryList.vue'
-import { onMounted, reactive } from 'vue';
-import { getStory, baseURL } from '../../api';
-
-onMounted(()=>{
-  getData()
-})
+import { storyList } from '../../common/data'
 
 // 页面数据
-const content = reactive([])
-
-const getData= async ()=>{
-  let { data } = await getStory()
-  data.data.forEach((item, index)=>{
-    content[index] = {
-      title: item.title,
-      url: baseURL + item.url,
-      text: item.text,
-      color: item.color
-    }
-  })
-}
-
+const content = storyList
 </script>
 
 <style lang="scss" scoped>
