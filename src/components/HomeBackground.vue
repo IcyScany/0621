@@ -6,16 +6,14 @@
 </template>
 
 <script setup>
-import { onMounted, ref, reactive } from 'vue';
-import { getHome } from '../api';
-import { baseURL } from '../api';
+import { onMounted, ref } from 'vue'
+import { backgroundImg } from '../common/data';
 
-onMounted(async()=>{
-  await getData()
+onMounted(()=>{
   showBg()
 })
 
-let img_list = reactive([])
+let img_list = backgroundImg
 
 // 索引值，透明度
 let url1 = ref('')
@@ -24,14 +22,6 @@ let index1 = ref(1)
 let index2 = ref(0)
 let opa1 = ref(1)
 let opa2 = ref(0)
-
-// 获取数据
-const getData = async ()=>{
-  let { data } = await getHome()
-  data.data.forEach((item, index)=>{
-    img_list[index] = baseURL + item.url
-  })
-}
 
 // 轮播实现
 const showBg = () => {

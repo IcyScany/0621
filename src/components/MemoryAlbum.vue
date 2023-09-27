@@ -1,14 +1,20 @@
 <template>
   <div class="album-container">
-    <!-- <img src="../../static/Ablum/13.jpg" alt=""> -->
-    <div class="panel" v-for="(item, index) in props.content" @click="show(index)" :class="{ 'active': item.actived }"
-      :style="{ backgroundImage: `url(${item.url})` }">
+    <div
+      class="panel"
+      v-for="(item, index) in props.content"
+      @click="show(index)"
+      :class="{ 'active': item.actived }"
+      :style="{ backgroundImage: `url(${item.url})` }"
+    >
       <h3>{{ item.title }}</h3>
     </div>
   </div>
 </template>
 
 <script setup>
+import { getCurrentInstance } from 'vue';
+
 const props = defineProps({
   content:{
     title: '', 
@@ -17,12 +23,14 @@ const props = defineProps({
   }
 })
 
+const _this = getCurrentInstance()
+
 // 展开图片
 const show = (index) => {
-  props.content.forEach((items, index) => {
-    items.actived = false
+  props.content.forEach((item, _index) => {
+    item.actived = _index === index
   })
-  props.content[index].actived = true
+  _this.update()
 }
 </script>
 
@@ -79,7 +87,7 @@ const show = (index) => {
   transition: opacity 0.3s ease-in 0.4s;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .album-container{
     height: 50vh;
   }
