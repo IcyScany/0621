@@ -4,7 +4,18 @@
     <template v-if="!isPortrait">
       <!-- 左侧图 -->
       <div class="left-slide" :style="slideTransform.left">
-        <div v-for="(item, index) in props.content" :key="'left-' + index" :style="{ backgroundImage: `url('${item.url}')` }"></div>
+        <div v-for="(item, index) in props.content" :key="'left-' + index" 
+             class="left-image-wrapper">
+          <!-- 内部滚动容器，添加 key 以重置动画 -->
+          <div class="left-image-scroll" :key="'left-scroll-' + index + '-' + animationKey">
+            <!-- 使用 images 数组中的图片 -->
+            <div v-for="(imgUrl, imgIndex) in item.images" 
+                 :key="'left-img-' + index + '-' + imgIndex"
+                 class="left-image" 
+                 :style="{ backgroundImage: `url('${imgUrl}')` }">
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 右侧文字 -->
@@ -23,8 +34,16 @@
       <!-- 图片容器 -->
       <div class="portrait-images" :style="slideTransform.portraitImages">
         <div v-for="(item, index) in props.content" :key="'portrait-img-' + index" 
-             class="portrait-image" 
-             :style="{ backgroundImage: `url('${item.url}')` }">
+             class="portrait-image-wrapper">
+          <!-- 内部滚动容器，添加 key 以重置动画 -->
+          <div class="portrait-image-scroll" :key="'portrait-scroll-' + index + '-' + animationKey">
+            <!-- 使用 images 数组中的图片 -->
+            <div v-for="(imgUrl, imgIndex) in item.images" 
+                 :key="'portrait-img-' + index + '-' + imgIndex"
+                 class="portrait-image" 
+                 :style="{ backgroundImage: `url('${imgUrl}')` }">
+            </div>
+          </div>
         </div>
       </div>
       
@@ -71,6 +90,7 @@ let slider = ref('')
 let distance = ref(0)
 let activeSlideIndex = ref(0)  // 改为响应式
 let isPortrait = ref(false)
+let animationKey = ref(0)  // 用于重置动画
 
 // 检测屏幕方向
 const checkOrientation = () => {
@@ -119,6 +139,9 @@ const changeSlide = (direction) => {
     }
   }
   distance.value = activeSlideIndex.value * (slider.value?.clientHeight || window.innerHeight)
+  
+  // 重置动画，让图片从头开始播放
+  animationKey.value++
 }
 
 onMounted(() => {
@@ -133,10 +156,13 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .slider-container {
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
   overflow: hidden;
   width: 100vw;
   height: 100vh;
+  max-height: 100vh;
 
   .left-slide {
     height: 100%;
@@ -145,6 +171,48 @@ onUnmounted(() => {
     width: 65%;
     left: 0;
     transition: transform 0.5s ease-in-out;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .left-image-wrapper {
+    width: 100%;
+    height: 100vh;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .left-image-scroll {
+    display: flex;
+    flex-direction: column;
+    animation: scrollImagesVertical 15s linear infinite;
+  }
+
+  .left-image {
+    width: 100%;
+    height: 100vh;
+    flex-shrink: 0;
+    position: relative;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    
+    /* 胶卷框效果 - 完整胶卷图片覆盖在上层 */
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('/src/assets/img/story/film1.png');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      pointer-events: none;
+      z-index: 1;
+    }
   }
 
   .right-slide {
@@ -200,26 +268,28 @@ onUnmounted(() => {
       transition: transform 0.5s ease-in-out;
     }
 
-    .portrait-image {
+    .portrait-image-wrapper {
       width: 100vw;
       height: 100%;
       flex-shrink: 0;
       position: relative;
-      
-      /* 创建内层容器来显示图片，添加内边距避免被胶卷框遮挡 */
-      &::before {
-        content: '';
-        position: absolute;
-        top: 25px;
-        left: 15px;
-        right: 15px;
-        bottom: 25px;
-        background-image: inherit;
-        background-repeat: no-repeat;
-        background-size: cover;
-        background-position: center center;
-        z-index: 0;
-      }
+      overflow: hidden;
+    }
+
+    .portrait-image-scroll {
+      display: flex;
+      flex-direction: row;
+      animation: scrollImages 15s linear infinite;
+    }
+
+    .portrait-image {
+      width: 100vw;
+      height: 40vh;
+      flex-shrink: 0;
+      position: relative;
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center center;
       
       /* 胶卷框效果 - 完整胶卷图片覆盖在上层 */
       &::after {
@@ -229,7 +299,7 @@ onUnmounted(() => {
         left: 0;
         right: 0;
         bottom: 0;
-        background-image: url('/src/assets/img/story/film.png');
+        background-image: url('/src/assets/img/story/film1.png');
         background-size: 100% 100%;
         background-repeat: no-repeat;
         background-position: center;
@@ -337,43 +407,6 @@ onUnmounted(() => {
   &::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.4);
     border-radius: 2px;
-  }
-}
-
-.left-slide>div {
-  position: relative;
-  height: 100%;
-  width: 100%;
-  
-  /* 创建内层容器来显示图片，添加内边距避免被胶卷框遮挡 */
-  &::before {
-    content: '';
-    position: absolute;
-    top: 30px;
-    left: 20px;
-    right: 20px;
-    bottom: 30px;
-    background-image: inherit;
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center center;
-    z-index: 0;
-  }
-  
-  /* 胶卷框效果 - 完整胶卷图片覆盖在上层 */
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url('/src/assets/img/story/film.png');
-    background-size: 100% 100%;
-    background-repeat: no-repeat;
-    background-position: center;
-    pointer-events: none;
-    z-index: 1;
   }
 }
 
@@ -486,6 +519,26 @@ button:focus {
   .slider-container:not(.portrait-mode) .action-buttons button {
     left: 40%;
     padding: 12px;
+  }
+}
+
+// 竖屏模式图片滚动动画（横向）
+@keyframes scrollImages {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-200vw); /* 滚动两张图片的宽度，第三张用于无缝衔接 */
+  }
+}
+
+// 横屏模式图片滚动动画（纵向）
+@keyframes scrollImagesVertical {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-200vh); /* 滚动两张图片的高度，第三张用于无缝衔接 */
   }
 }
 </style>
