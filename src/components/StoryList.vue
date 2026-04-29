@@ -1,35 +1,61 @@
 <template>
-  <div class="slider-container" ref="slider">
-    <!-- 左侧图 -->
-    <div class="left-slide" :style="{ transform: 'translateY(-' + distance + 'px)' }">
-      <div v-for="(item, index) in props.content" :style="{ backgroundImage: `url('${item.url}')` }"></div>
-    </div>
+  <div class="slider-container" :class="{ 'portrait-mode': isPortrait }" ref="slider">
+    <!-- 横屏模式：左右分离布局 -->
+    <template v-if="!isPortrait">
+      <!-- 左侧图 -->
+      <div class="left-slide" :style="slideTransform.left">
+        <div v-for="(item, index) in props.content" :key="'left-' + index" :style="{ backgroundImage: `url('${item.url}')` }"></div>
+      </div>
 
-    <!-- 右侧图 -->
-    <div class="right-slide" :style="{ transform: 'translateY(' + distance + 'px)', top: -(props.content.length - 1) * 100 + 'vh' }">
-      <div v-for="(item, index) in props.content" :style="{ backgroundColor: props.content[content.length-index-1].color }">
-        <div class="right-slide-inner">
-          <h1>{{ props.content[content.length-index-1].title }}</h1>
-          <p class="text" v-html="props.content[content.length-index-1].text"></p>
+      <!-- 右侧文字 -->
+      <div class="right-slide" :style="slideTransform.right">
+        <div v-for="(item, index) in props.content" :key="'right-' + index" :style="{ backgroundColor: props.content[content.length-index-1].color }">
+          <div class="right-slide-inner">
+            <h1>{{ props.content[content.length-index-1].title }}</h1>
+            <p class="text" v-html="props.content[content.length-index-1].text"></p>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
+
+    <!-- 竖屏模式：上下配套布局 -->
+    <template v-else>
+      <!-- 图片容器 -->
+      <div class="portrait-images" :style="slideTransform.portraitImages">
+        <div v-for="(item, index) in props.content" :key="'portrait-img-' + index" 
+             class="portrait-image" 
+             :style="{ backgroundImage: `url('${item.url}')` }">
+        </div>
+      </div>
+      
+      <!-- 文字容器 -->
+      <div class="portrait-texts" :style="slideTransform.portraitTexts">
+        <div v-for="(item, index) in [...props.content].reverse()" :key="'portrait-text-' + index" 
+             class="portrait-text" 
+             :style="{ backgroundColor: item.color }">
+          <div class="portrait-text-inner">
+            <h1>{{ item.title }}</h1>
+            <p class="text" v-html="item.text"></p>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <!-- 图片切换按钮 -->
     <div class="action-buttons">
       <button class="up-button" @click="changeSlide('up')">
-        <n-icon :component='ArrowUp' size="20" color="black"></n-icon>
+        <n-icon :component='isPortrait ? ArrowBack : ArrowUp' size="20" color="black"></n-icon>
       </button>
       <button class="down-button" @click="changeSlide('down')">
-        <n-icon :component='ArrowDown' size="20" color="black"></n-icon>
+        <n-icon :component='isPortrait ? ArrowForward : ArrowDown' size="20" color="black"></n-icon>
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, reactive } from 'vue';
-import { ArrowUp, ArrowDown } from "@vicons/ionicons5";
+import { onMounted, onUnmounted, ref, reactive, computed } from 'vue';
+import { ArrowUp, ArrowDown, ArrowBack, ArrowForward } from "@vicons/ionicons5";
 
 const props = defineProps({
   content:{
@@ -43,24 +69,66 @@ const props = defineProps({
 // 获取sliderContainer元素
 let slider = ref('')
 let distance = ref(0)
-let activeSlideIndex = 0
+let activeSlideIndex = ref(0)  // 改为响应式
+let isPortrait = ref(false)
+
+// 检测屏幕方向
+const checkOrientation = () => {
+  isPortrait.value = window.innerHeight > window.innerWidth
+}
+
+// 计算滑动变换样式
+const slideTransform = computed(() => {
+  const sliderHeight = slider.value?.clientHeight || window.innerHeight
+  const sliderWidth = slider.value?.clientWidth || window.innerWidth
+  
+  if (isPortrait.value) {
+    // 竖屏模式：图片向左移动，文字向右移动
+    const offset = activeSlideIndex.value * sliderWidth
+    return {
+      portraitImages: { transform: `translateX(-${offset}px)` },
+      portraitTexts: { 
+        transform: `translateX(${offset}px)`,
+        left: `${-(props.content.length - 1) * 100}vw`
+      }
+    }
+  } else {
+    // 横屏模式：图片向上移动，文字向下移动（原来的逻辑）
+    const offset = activeSlideIndex.value * sliderHeight
+    return {
+      left: { transform: `translateY(-${offset}px)` },
+      right: { 
+        transform: `translateY(${offset}px)`, 
+        top: `${-(props.content.length - 1) * 100}vh` 
+      }
+    }
+  }
+})
 
 // 图片切换实现
 const changeSlide = (direction) => {
-  let sliderHeight = slider.value.clientHeight
   if (direction === 'down') {
-    activeSlideIndex++
-    if (activeSlideIndex > props.content.length - 1) {
-      activeSlideIndex = 0
+    activeSlideIndex.value++
+    if (activeSlideIndex.value > props.content.length - 1) {
+      activeSlideIndex.value = 0
     }
   } else if (direction === 'up') {
-    activeSlideIndex--
-    if (activeSlideIndex < 0) {
-      activeSlideIndex = props.content.length - 1
+    activeSlideIndex.value--
+    if (activeSlideIndex.value < 0) {
+      activeSlideIndex.value = props.content.length - 1
     }
   }
-  distance.value = activeSlideIndex * sliderHeight
+  distance.value = activeSlideIndex.value * (slider.value?.clientHeight || window.innerHeight)
 }
+
+onMounted(() => {
+  checkOrientation()
+  window.addEventListener('resize', checkOrientation)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkOrientation)
+})
 </script>
 
 <style lang="scss" scoped>
@@ -107,6 +175,133 @@ const changeSlide = (direction) => {
       box-sizing: border-box;
     }
   }
+
+  // 竖屏模式：上下配套布局
+  &.portrait-mode {
+    .portrait-images {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 40%;
+      display: flex;
+      flex-direction: row;
+      transition: transform 0.5s ease-in-out;
+    }
+
+    .portrait-texts {
+      position: absolute;
+      top: 40%;
+      left: 0;
+      width: 100%;
+      height: 60%;
+      display: flex;
+      flex-direction: row;
+      transition: transform 0.5s ease-in-out;
+    }
+
+    .portrait-image {
+      width: 100vw;
+      height: 100%;
+      flex-shrink: 0;
+      position: relative;
+      
+      /* 创建内层容器来显示图片，添加内边距避免被胶卷框遮挡 */
+      &::before {
+        content: '';
+        position: absolute;
+        top: 25px;
+        left: 15px;
+        right: 15px;
+        bottom: 25px;
+        background-image: inherit;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center center;
+        z-index: 0;
+      }
+      
+      /* 胶卷框效果 - 完整胶卷图片覆盖在上层 */
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: url('/src/assets/img/story/film.png');
+        background-size: 100% 100%;
+        background-repeat: no-repeat;
+        background-position: center;
+        pointer-events: none;
+        z-index: 1;
+      }
+    }
+
+    .portrait-text {
+      width: 100vw;
+      height: 100%;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .portrait-text-inner {
+      width: 100%;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 40px 20px;
+      box-sizing: border-box;
+
+      /* 自定义滚动条 */
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 3px;
+        
+        &:hover {
+          background: rgba(255, 255, 255, 0.7);
+        }
+      }
+
+      h1 {
+        font-size: 32px;
+        margin-bottom: 20px;
+        margin-top: 0;
+        padding: 0 20px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .text {
+        padding: 0 20px;
+        margin: 0;
+        font-family: serif;
+        color: #fff;
+        font-weight: 400;
+        font-size: 15px;
+        line-height: 1.8;
+        width: 100%;
+        box-sizing: border-box;
+        flex-shrink: 0;
+      }
+    }
+  }
 }
 
 .right-slide>div {
@@ -117,7 +312,7 @@ const changeSlide = (direction) => {
   align-items: center;
   justify-content: flex-start;
   color: #fff;
-  overflow: hidden; /* 外层不滚动，由内层处理 */
+  overflow: hidden;
 }
 
 .right-slide-inner {
@@ -146,11 +341,40 @@ const changeSlide = (direction) => {
 }
 
 .left-slide>div {
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center center;
+  position: relative;
   height: 100%;
   width: 100%;
+  
+  /* 创建内层容器来显示图片，添加内边距避免被胶卷框遮挡 */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 20px;
+    right: 20px;
+    bottom: 30px;
+    background-image: inherit;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    z-index: 0;
+  }
+  
+  /* 胶卷框效果 - 完整胶卷图片覆盖在上层 */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('/src/assets/img/story/film.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    pointer-events: none;
+    z-index: 1;
+  }
 }
 
 button {
@@ -189,9 +413,27 @@ button:focus {
   border-bottom-left-radius: 5px;
 }
 
+// 竖屏模式下的按钮位置
+.slider-container.portrait-mode .action-buttons button {
+  left: auto;
+  top: 40%;
+}
+
+.slider-container.portrait-mode .action-buttons .down-button {
+  right: 20px;
+  transform: translateY(-50%);
+  border-radius: 5px;
+}
+
+.slider-container.portrait-mode .action-buttons .up-button {
+  left: 20px;
+  transform: translateY(-50%);
+  border-radius: 5px;
+}
+
 // 响应式优化：小屏幕时调整布局和文字间距
 @media (max-width: 768px) {
-  .slider-container {
+  .slider-container:not(.portrait-mode) {
     .left-slide {
       width: 50%;
     }
@@ -212,13 +454,13 @@ button:focus {
     }
   }
 
-  .slider-container .action-buttons button {
+  .slider-container:not(.portrait-mode) .action-buttons button {
     left: 50%;
   }
 }
 
 @media (max-width: 480px) {
-  .slider-container {
+  .slider-container:not(.portrait-mode) {
     .left-slide {
       width: 40%;
     }
@@ -241,7 +483,7 @@ button:focus {
     }
   }
 
-  .slider-container .action-buttons button {
+  .slider-container:not(.portrait-mode) .action-buttons button {
     left: 40%;
     padding: 12px;
   }
