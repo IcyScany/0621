@@ -15,9 +15,13 @@ import HomeBackground from '../../components/HomeBackground.vue'
 .home{
   height: 100vh;
   width: 100vw;
+  max-height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 </style>

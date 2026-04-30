@@ -128,11 +128,15 @@ const GotoPage = (page) => {
 .time-counter {
   height: 100vh;
   width: 100vw;
+  max-height: 100vh;
+  max-width: 100vw;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
+  position: relative;
 }
 
 .timer {
@@ -202,8 +206,22 @@ const GotoPage = (page) => {
 }
 
 @media (max-width: 480px) {
-  .title{
+  .title {
     font-size: 2.1rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5em;
+  }
+  
+  .timer-top {
+    margin-bottom: 10px;
+  }
+  
+  .timer {
+    padding: 0.5em;
+    
+    div {
+      margin: 0.2em 0.4em;
+    }
   }
 }
 .btn-group {

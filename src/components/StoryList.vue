@@ -6,13 +6,19 @@
       <div class="left-slide" :style="slideTransform.left">
         <div v-for="(item, index) in props.content" :key="'left-' + index" 
              class="left-image-wrapper">
-          <!-- 内部滚动容器，添加 key 以重置动画 -->
-          <div class="left-image-scroll" :key="'left-scroll-' + index + '-' + animationKey">
+          <!-- 内部滚动容器，添加 key 以重置动画，动态设置动画时长 -->
+          <div class="left-image-scroll" 
+               :key="'left-scroll-' + index + '-' + animationKey"
+               :style="{ animationDuration: (item.images.length * 5) + 's' }">
             <!-- 使用 images 数组中的图片 -->
             <div v-for="(imgUrl, imgIndex) in item.images" 
                  :key="'left-img-' + index + '-' + imgIndex"
                  class="left-image" 
                  :style="{ backgroundImage: `url('${imgUrl}')` }">
+            </div>
+            <!-- 添加第一张图片的副本用于无缝循环 -->
+            <div class="left-image" 
+                 :style="{ backgroundImage: `url('${item.images[0]}')` }">
             </div>
           </div>
         </div>
@@ -35,13 +41,19 @@
       <div class="portrait-images" :style="slideTransform.portraitImages">
         <div v-for="(item, index) in props.content" :key="'portrait-img-' + index" 
              class="portrait-image-wrapper">
-          <!-- 内部滚动容器，添加 key 以重置动画 -->
-          <div class="portrait-image-scroll" :key="'portrait-scroll-' + index + '-' + animationKey">
+          <!-- 内部滚动容器，添加 key 以重置动画，动态设置动画时长 -->
+          <div class="portrait-image-scroll" 
+               :key="'portrait-scroll-' + index + '-' + animationKey"
+               :style="{ animationDuration: (item.images.length * 5) + 's' }">
             <!-- 使用 images 数组中的图片 -->
             <div v-for="(imgUrl, imgIndex) in item.images" 
                  :key="'portrait-img-' + index + '-' + imgIndex"
                  class="portrait-image" 
                  :style="{ backgroundImage: `url('${imgUrl}')` }">
+            </div>
+            <!-- 添加第一张图片的副本用于无缝循环 -->
+            <div class="portrait-image" 
+                 :style="{ backgroundImage: `url('${item.images[0]}')` }">
             </div>
           </div>
         </div>
@@ -187,6 +199,7 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     animation: scrollImagesVertical 15s linear infinite;
+    /* 动画时长通过内联样式动态设置 */
   }
 
   .left-image {
@@ -280,6 +293,7 @@ onUnmounted(() => {
       display: flex;
       flex-direction: row;
       animation: scrollImages 15s linear infinite;
+      /* 动画时长通过内联样式动态设置 */
     }
 
     .portrait-image {
@@ -523,12 +537,15 @@ button:focus {
 }
 
 // 竖屏模式图片滚动动画（横向）
+// 滚动 N/(N+1) 的距离，其中 N 是原始图片数量
+// 例如：3张图片+1张副本=4张，滚动 3/4 = 75%
+// 但由于图片数量不同，我们需要在模板中动态计算
 @keyframes scrollImages {
   0% {
     transform: translateX(0);
   }
   100% {
-    transform: translateX(-200vw); /* 滚动两张图片的宽度，第三张用于无缝衔接 */
+    transform: translateX(calc(-100% + 100vw)); /* 滚动到最后，留一张图片可见 */
   }
 }
 
@@ -538,7 +555,7 @@ button:focus {
     transform: translateY(0);
   }
   100% {
-    transform: translateY(-200vh); /* 滚动两张图片的高度，第三张用于无缝衔接 */
+    transform: translateY(calc(-100% + 100vh)); /* 滚动到最后，留一张图片可见 */
   }
 }
 </style>

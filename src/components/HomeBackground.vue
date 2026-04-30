@@ -54,7 +54,6 @@ const showBg = () => {
   top: 0;
   width: 100%;
   height: 100vh;
-  min-height: 900px;
   overflow: hidden;
   position: fixed;
   z-index: -10;
